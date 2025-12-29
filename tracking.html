@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRACKING_ME // FOCUS</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- THEME: ENGINEERING BRUTALISM --- */
+        :root {
+            --bg-body: #ffffff;
+            --bg-panel: #ffffff;
+            --bg-input: #f6f8fa;
+            
+            --border-heavy: #000000;
+            --border-light: #d0d7de;
+            
+            --text-main: #000000;
+            --text-muted: #57606a;
+            
+            --color-success: #1a7f37;
+            --color-pause: #6c757d; 
+            --color-danger: #cf222e;
+            --color-focus: #0969da;
+
+            --font-ui: 'Inter', system-ui, sans-serif;
+            --font-data: 'JetBrains Mono', monospace;
+        }
+
+        * { box-sizing: border-box; border-radius: 0 !important; }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            font-family: var(--font-ui);
+            min-height: 100vh;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-image: radial-gradient(#e1e4e8 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        /* --- GLOBAL HEADER --- */
+        .global-header {
+            width: 100%;
+            background: var(--text-main);
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: var(--font-data);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            border-bottom: 4px solid var(--border-light);
+            z-index: 10;
+        }
+        .brand-title { font-weight: 700; letter-spacing: 2px; }
+        .user-controls { display: flex; gap: 20px; }
+        .nav-link { cursor: pointer; color: #ff6b6b; }
+        .nav-link:hover { text-decoration: underline; }
+
+        /* --- LAYOUTS --- */
+        .main-layout {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 500px;
+            padding: 40px 20px;
+        }
+        
+        .auth-layout {
+            display: flex;
+            justify-content: center;
+            padding-top: 80px;
+            width: 100%;
+        }
+
+        /* --- PANELS --- */
+        .panel {
+            width: 100%;
+            background: var(--bg-panel);
+            border: 2px solid var(--border-heavy);
+            box-shadow: 8px 8px 0px rgba(0,0,0,1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .header-strip {
+            background: var(--bg-input);
+            color: var(--text-main);
+            padding: 10px 15px;
+            font-family: var(--font-data);
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border-heavy);
+        }
+
+        .content { padding: 20px; }
+
+        /* --- ELEMENTS --- */
+        h3 {
+            font-family: var(--font-data);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            margin: 0 0 10px 0;
+            border-bottom: 2px solid var(--text-main);
+            padding-bottom: 5px;
+            display: inline-block;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 10px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-light);
+            color: var(--text-main);
+            font-family: var(--font-data);
+            font-size: 0.8rem;
+            outline: none;
+        }
+        input:focus { border-color: var(--text-main); border-left: 4px solid var(--text-main); background: #fff; }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid var(--text-main);
+            font-family: var(--font-data);
+            font-weight: 700;
+            font-size: 0.8rem;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            transition: all 0.1s;
+        }
+        .btn-primary { background: var(--text-main); color: white; }
+        .btn-primary:hover { background: #333; }
+        .btn-sec { background: white; color: var(--text-main); }
+        .btn-sec:hover { background: var(--bg-input); }
+        
+        .btn-success { background: var(--color-success); color: white; border-color: var(--color-success); }
+        .btn-warning { background: var(--color-pause); color: white; border-color: var(--color-pause); }
+        .btn-danger { background: var(--color-danger); color: white; border-color: var(--color-danger); }
+
+        /* TIMER */
+        .timer-module { border: 1px solid var(--border-light); background: #fff; margin-bottom: 15px; }
+        .timer-display {
+            font-family: var(--font-data);
+            font-size: 4.5rem;
+            font-weight: 700;
+            text-align: center;
+            padding: 25px 0;
+            letter-spacing: -3px;
+            line-height: 1;
+            font-variant-numeric: tabular-nums;
+        }
+        
+        /* TASK INPUT */
+        .task-input-area { background: #ffffff; padding: 15px; border-bottom: 2px solid var(--border-heavy); }
+        .task-input {
+            width: 100%; background: transparent; border: 1px solid #ccc;
+            color: #000000; font-family: var(--font-data); font-size: 1rem; 
+            text-align: center; margin: 0; padding: 10px;
+        }
+        .task-input::placeholder { color: #888; text-transform: uppercase; font-size: 0.8rem; }
+        .task-input:focus { outline: none; border-color: black; }
+
+        /* PULSING DOT */
+        .badge-container {
+            display: flex; align-items: center; gap: 6px;
+            font-size: 0.65rem; font-weight: 700; background: #eee; 
+            padding: 4px 8px; border-radius: 0;
+        }
+        .dot { width: 8px; height: 8px; background: #ccc; display: inline-block; }
+        .recording .dot { 
+            background: var(--color-success);
+            box-shadow: 0 0 0 0 rgba(46, 160, 67, 0.7);
+            animation: pulse-green 2s infinite;
+        }
+        .recording { background: #dafbe1 !important; color: green !important; }
+        @keyframes pulse-green {
+            0% { box-shadow: 0 0 0 0 rgba(46, 160, 67, 0.7); } 70% { box-shadow: 0 0 0 6px rgba(46, 160, 67, 0); } 100% { box-shadow: 0 0 0 0 rgba(46, 160, 67, 0); }
+        }
+
+        /* YEARLY CONTRIBUTION */
+        .heatmap-box {
+            width: 100%;
+            border: 2px solid var(--border-heavy);
+            background: white;
+            padding: 20px;
+            box-shadow: 8px 8px 0px rgba(0,0,0,0.1);
+            margin-top: 25px;
+        }
+        .heatmap-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .heatmap-score { font-family: var(--font-data); font-weight: 700; color: var(--color-success); }
+        .heatmap-container { display: grid; grid-template-columns: repeat(52, 1fr); gap: 2px; }
+        .heat-box { width: 100%; padding-bottom: 100%; background: #ebedf0; }
+        .heat-l1 { background: #9be9a8; }
+        .heat-l2 { background: #40c463; }
+        .heat-l3 { background: #30a14e; }
+        .heat-l4 { background: #216e39; }
+
+        /* STATS GRID */
+        .stats-table { display: grid; grid-template-columns: 1fr 1fr 1fr; border: 1px solid var(--border-light); margin-top: 20px; }
+        .stat-cell { padding: 15px 5px; text-align: center; border-right: 1px solid var(--border-light); }
+        .stat-cell:last-child { border-right: none; }
+        .stat-val { font-family: var(--font-data); font-size: 1.1rem; font-weight: 700; }
+        .stat-lbl { font-size: 0.6rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 5px; }
+
+        /* FOOTER */
+        .footer { margin-top: auto; padding: 40px; font-family: var(--font-data); font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; }
+
+        /* LOGS TABLE */
+        .logs-table-container {
+            width: 100%; overflow-y: auto; max-height: 60vh;
+            border: 1px solid var(--border-light);
+        }
+        .logs-table { width: 100%; border-collapse: collapse; font-family: var(--font-data); font-size: 0.8rem; }
+        .logs-table th { background: var(--bg-input); padding: 10px; text-align: left; position: sticky; top: 0; border-bottom: 2px solid black; }
+        .logs-table td { padding: 8px 10px; border-bottom: 1px solid #eee; }
+        .logs-table tr:hover { background: #f9f9f9; }
+
+        /* UTILS */
+        .hidden { display: none !important; }
+        .overlay { position: fixed; inset: 0; background: rgba(255,255,255,0.98); display: flex; align-items: center; justify-content: center; z-index: 100; }
+        .modal-box { border: 2px solid black; padding: 40px; background: white; text-align: center; max-width: 400px; box-shadow: 10px 10px 0 rgba(0,0,0,0.1); }
+        .modal-wide { max-width: 800px; width: 90%; text-align: left; }
+
+    </style>
+</head>
+<body>
+
+<div id="global-header" class="global-header hidden">
+    <div class="brand-title">TRACKING ME</div>
+    <div class="user-controls">
+        <span id="user-display">USER: UNKNOWN</span>
+        <span class="nav-link" onclick="location.reload()">[ LOGOUT ]</span>
+    </div>
+</div>
+
+<div id="view-auth" class="auth-layout">
+    <div class="panel" style="width: 400px;">
+        <div class="header-strip">
+            <span>SYS.AUTH</span>
+            <span>v5.1</span>
+        </div>
+        <div class="content">
+            <h3>ACCESS CONTROL</h3>
+            <div id="group-login">
+                <input type="text" id="u-in" placeholder="USERNAME">
+                <input type="password" id="p-in" placeholder="PASSWORD">
+                <button onclick="login()" class="btn-primary">INITIALIZE SESSION</button>
+                <button onclick="signup()" class="btn-sec">REGISTER NEW UNIT</button>
+            </div>
+            
+            <div id="group-recover" class="hidden">
+                <p style="font-size:0.8rem; font-family:var(--font-data);">// EMERGENCY OVERRIDE //</p>
+                <input type="text" id="k-in" placeholder="RECOVERY KEY">
+                <input type="password" id="new-p-in" placeholder="NEW PASSWORD">
+                <button onclick="recoverAccount()" class="btn-success">EXECUTE RESET</button>
+            </div>
+            
+            <div style="text-align:center; margin-top:15px; font-size:0.75rem;">
+                <span onclick="toggleRec()" style="cursor:pointer; text-decoration:underline; font-family:var(--font-data);">[ RECOVERY OPTIONS ]</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="view-dash" class="main-layout hidden">
+    
+    <div class="panel">
+        <div class="task-input-area">
+            <input type="text" id="task-name" class="task-input" placeholder="ENTER CURRENT OBJECTIVE...">
+        </div>
+        
+        <div class="content">
+            <div class="timer-module">
+                <div class="header-strip" style="background:#fff; border-bottom:1px solid #eee;">
+                    <span>SESSION TIMER</span>
+                    <div id="status-badge" class="badge-container">
+                        <span class="dot"></span> <span id="status-text">IDLE</span>
+                    </div>
+                </div>
+                <div class="timer-display" id="timer">00:00:00</div>
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <button id="btn-main" onclick="handleMainButton()" class="btn-primary">START</button>
+                <button id="btn-stop" onclick="stopAndSave()" class="btn-danger hidden">STOP & SAVE</button>
+            </div>
+
+            <div class="stats-table">
+                <div class="stat-cell"><div class="stat-lbl">TODAY</div><div class="stat-val" id="s-today">0.00h</div></div>
+                <div class="stat-cell"><div class="stat-lbl">WEEK</div><div class="stat-val" id="s-week">0.00h</div></div>
+                <div class="stat-cell"><div class="stat-lbl">MONTH</div><div class="stat-val" id="s-month">0.00h</div></div>
+            </div>
+        </div>
+    </div>
+
+    <button onclick="openLogs()" class="btn-sec" style="margin: 5px 0 25px 0;">CHECK LOGS >></button>
+
+    <div class="heatmap-box">
+        <div class="heatmap-header">
+            <span style="font-size:0.7rem; color:#888; font-weight:700;">YEARLY ACTIVITY</span>
+            <span id="heatmap-score" class="heatmap-score">SCORE: 0/365</span>
+        </div>
+        <div class="heatmap-container" id="heatmap"></div>
+    </div>
+
+</div>
+
+<div class="footer">
+    MADE BY <span style="color: var(--color-success); font-weight: 700;">NIZAUL RAHMAN</span>
+</div>
+
+<div id="modal-pause" class="overlay hidden">
+    <div class="modal-box">
+        <h3>// SYSTEM PAUSED //</h3>
+        <p style="color:#666; font-size:0.8rem; margin-bottom:20px;">
+            Inactivity detected. Timer paused.
+        </p>
+        <button class="btn-primary" onclick="resumeTimer()">RESUME</button>
+    </div>
+</div>
+
+<div id="modal-logs" class="overlay hidden">
+    <div class="modal-box modal-wide">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h3>SESSION LOGS</h3>
+            <button onclick="document.getElementById('modal-logs').classList.add('hidden')" style="width:auto; padding:5px 10px; font-size:0.7rem;">CLOSE [X]</button>
+        </div>
+        <div class="logs-table-container">
+            <table class="logs-table">
+                <thead>
+                    <tr>
+                        <th>DATE</th>
+                        <th>DAY</th>
+                        <th>START</th>
+                        <th>END</th>
+                        <th>DURATION</th>
+                    </tr>
+                </thead>
+                <tbody id="logs-body">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- HELPER ---
+    const val = (id) => document.getElementById(id).value;
+    
+    // ============================================
+    // CONFIGURATION (RENAMED TO AVOID CONFLICTS)
+    // ============================================
+    const SB_URL = 'https://ztfhxfyfbuetbwddicby.supabase.co'; 
+    const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp0Zmh4ZnlmYnVldGJ3ZGRpY2J5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcwMjE2NDYsImV4cCI6MjA4MjU5NzY0Nn0.LUr_K6aEdlBnO_rNTROQAx0Kze7LZg5AtT8HAFnWU1k'; 
+    // ============================================
+
+    let db;
+    let user = null;
+    let timer = { running: false, paused: false, seconds: 0, startTime: null, interval: null, lastTick: 0 };
+    let allSessions = [];
+
+    // --- INIT ---
+    try {
+        // Using renamed variables to prevent 'Invalid URL' error
+        db = window.supabase.createClient(SB_URL.trim(), SB_KEY.trim());
+        initHeatmap();
+    } catch (err) { alert("CRITICAL ERROR: " + err.message); }
+
+    // --- AUTH ---
+    async function login() {
+        if (!db) return alert("System Offline.");
+        const { data, error } = await db.rpc('login_user', { u_name: val('u-in'), u_pass: val('p-in') });
+        if(error || !data.length) return alert("Invalid Credentials");
+        
+        user = data[0];
+        document.getElementById('view-auth').classList.add('hidden');
+        document.getElementById('view-dash').classList.remove('hidden');
+        document.getElementById('global-header').classList.remove('hidden');
+        document.getElementById('user-display').innerText = `USER: ${user.username.toUpperCase()}`;
+        loadData();
+    }
+    
+    async function signup() {
+        if(!db) return;
+        const u = val('u-in'), p = val('p-in');
+        const key = `REC-${Math.random().toString(36).slice(2,8).toUpperCase()}`;
+        const { error } = await db.rpc('register_user', { u_name: u, u_pass: p, u_recovery: key });
+        if(!error) {
+            const blob = new Blob([`KEY: ${key}`], {type: 'text/plain'});
+            const a = document.createElement('a'); a.href = window.URL.createObjectURL(blob); a.download = 'key.txt'; a.click();
+            alert("Registered. Key downloaded.");
+        } else alert("Error signing up.");
+    }
+
+    async function recoverAccount() {
+        if (!db) return;
+        const k = val('k-in');
+        const p = val('new-p-in');
+        const { data } = await db.rpc('reset_password_by_key', { u_key: k, new_pass: p });
+        if(data) { alert("Success. Login now."); toggleRec(); } else alert("Invalid Key.");
+    }
+
+    function toggleRec() {
+        document.getElementById('group-recover').classList.toggle('hidden');
+        document.getElementById('group-login').classList.toggle('hidden');
+    }
+
+    // --- TIMER LOGIC ---
+    function handleMainButton() {
+        const btn = document.getElementById('btn-main');
+        const stopBtn = document.getElementById('btn-stop');
+        
+        if (!timer.running) {
+            startTimer();
+            btn.innerText = "PAUSE";
+            btn.className = "btn-warning"; 
+            stopBtn.classList.remove('hidden');
+        } else if (timer.running && !timer.paused) {
+            pauseTimer();
+            btn.innerText = "RESUME";
+            btn.className = "btn-success"; 
+        } else if (timer.running && timer.paused) {
+            resumeTimer();
+            btn.innerText = "PAUSE";
+            btn.className = "btn-warning";
+        }
+    }
+
+    function startTimer() {
+        timer.running = true;
+        timer.paused = false;
+        timer.startTime = new Date().toISOString();
+        timer.lastTick = Date.now();
+        updateBadge("REC", "recording");
+        timer.interval = setInterval(tick, 1000);
+    }
+
+    function pauseTimer() {
+        timer.paused = true;
+        clearInterval(timer.interval);
+        updateBadge("PAUSED", "");
+        document.getElementById('status-badge').style.background = "#fff8c5";
+        document.getElementById('status-badge').style.color = "#666";
+    }
+
+    function resumeTimer() {
+        timer.paused = false;
+        timer.lastTick = Date.now();
+        updateBadge("REC", "recording");
+        document.getElementById('modal-pause').classList.add('hidden');
+        timer.interval = setInterval(tick, 1000);
+    }
+
+    function updateBadge(text, activeClass) {
+        const b = document.getElementById('status-badge');
+        const txt = document.getElementById('status-text');
+        txt.innerText = text;
+        if(activeClass) b.classList.add(activeClass);
+        else b.classList.remove('recording');
+        
+        if(!activeClass) {
+            b.style.background = "#eee";
+            b.style.color = "#666";
+        }
+    }
+
+    function tick() {
+        const now = Date.now();
+        if(now - timer.lastTick > 3000) { pauseTimer(); document.getElementById('modal-pause').classList.remove('hidden'); return; }
+        timer.seconds++;
+        timer.lastTick = now;
+        renderTimer();
+    }
+
+    async function stopAndSave() {
+        clearInterval(timer.interval);
+        if(timer.seconds > 5) {
+            await db.from('study_sessions').insert({
+                user_id: user.user_id,
+                start_time: timer.startTime,
+                duration: timer.seconds
+            });
+            loadData();
+        }
+        timer = { running: false, paused: false, seconds: 0, startTime: null, interval: null, lastTick: 0 };
+        renderTimer();
+        const btn = document.getElementById('btn-main');
+        btn.innerText = "START";
+        btn.className = "btn-primary";
+        document.getElementById('btn-stop').classList.add('hidden');
+        updateBadge("IDLE", "");
+    }
+
+    function renderTimer() {
+        const h = Math.floor(timer.seconds / 3600).toString().padStart(2, '0');
+        const m = Math.floor((timer.seconds % 3600) / 60).toString().padStart(2, '0');
+        const s = (timer.seconds % 60).toString().padStart(2, '0');
+        document.getElementById('timer').innerText = `${h}:${m}:${s}`;
+    }
+
+    // --- DATA ---
+    async function loadData() {
+        const { data } = await db.from('study_sessions').select('*').eq('user_id', user.user_id).order('start_time', { ascending: false });
+        if(!data) return;
+        
+        allSessions = data;
+
+        const now = new Date();
+        let d=0, w=0, m=0;
+        data.forEach(x => {
+            const date = new Date(x.start_time);
+            const diff = now - date;
+            if(date.toDateString() === now.toDateString()) d += x.duration;
+            if(diff < 604800000) w += x.duration;
+            if(diff < 2592000000) m += x.duration;
+        });
+        const fmt = s => (s/3600).toFixed(2) + 'h';
+        document.getElementById('s-today').innerText = fmt(d);
+        document.getElementById('s-week').innerText = fmt(w);
+        document.getElementById('s-month').innerText = fmt(m);
+
+        updateHeatmap(data);
+    }
+
+    // --- HEATMAP ---
+    function initHeatmap() {
+        const container = document.getElementById('heatmap');
+        for(let i=0; i<364; i++) {
+            const div = document.createElement('div');
+            div.className = 'heat-box';
+            div.id = `heat-${i}`;
+            container.appendChild(div);
+        }
+    }
+    
+    function updateHeatmap(sessions) {
+        document.querySelectorAll('.heat-box').forEach(d => d.className = 'heat-box');
+        const today = new Date();
+        let dailyTotals = {};
+
+        sessions.forEach(s => {
+            const dateStr = new Date(s.start_time).toDateString();
+            if(!dailyTotals[dateStr]) dailyTotals[dateStr] = 0;
+            dailyTotals[dateStr] += s.duration;
+        });
+
+        let productiveDays = 0;
+        const oneYearAgo = new Date();
+        oneYearAgo.setDate(oneYearAgo.getDate() - 365);
+
+        for(const [dateStr, totalSeconds] of Object.entries(dailyTotals)) {
+            const date = new Date(dateStr);
+            if(date >= oneYearAgo) {
+                if(totalSeconds >= 14400) productiveDays++;
+                
+                const diffDays = Math.floor((today - date) / (1000 * 60 * 60 * 24));
+                if(diffDays < 364 && diffDays >= 0) {
+                    const index = 363 - diffDays;
+                    const el = document.getElementById(`heat-${index}`);
+                    if(el) {
+                        if(totalSeconds > 7200) el.classList.add('heat-l4');
+                        else if(totalSeconds > 3600) el.classList.add('heat-l3');
+                        else if(totalSeconds > 1800) el.classList.add('heat-l2');
+                        else el.classList.add('heat-l1');
+                    }
+                }
+            }
+        }
+        document.getElementById('heatmap-score').innerText = `SCORE: ${productiveDays}/365`;
+    }
+
+    // --- LOGS ---
+    function openLogs() {
+        const tbody = document.getElementById('logs-body');
+        tbody.innerHTML = "";
+        
+        allSessions.forEach(s => {
+            const start = new Date(s.start_time);
+            const end = new Date(start.getTime() + s.duration * 1000);
+            
+            const dateStr = start.toLocaleDateString();
+            const dayStr = start.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
+            const startStr = start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            const endStr = end.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            
+            const h = Math.floor(s.duration / 3600);
+            const m = Math.floor((s.duration % 3600) / 60);
+            const durStr = `${h}h ${m}m`;
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${dateStr}</td><td>${dayStr}</td><td>${startStr}</td><td>${endStr}</td><td style="font-weight:700;">${durStr}</td>`;
+            tbody.appendChild(tr);
+        });
+        document.getElementById('modal-logs').classList.remove('hidden');
+    }
+</script>
+</body>
+</html>
